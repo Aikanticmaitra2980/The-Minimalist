@@ -9,14 +9,14 @@ from google.oauth2 import service_account
 # --- 1. SMART FIREBASE INITIALIZATION ---
 if 'db' not in st.session_state:
     try:
-        # Check for Secrets (Streamlit Cloud or Local .streamlit/secrets.toml)
+        # Try Global Secrets first (Streamlit Cloud)
         if "firebase_secrets" in st.secrets:
             creds_dict = dict(st.secrets["firebase_secrets"])
             if "\\n" in creds_dict.get("private_key", ""):
                 creds_dict["private_key"] = creds_dict["private_key"].replace("\\n", "\n")
             creds = service_account.Credentials.from_service_account_info(creds_dict)
             st.session_state.db = firestore.Client(credentials=creds, project=creds_dict["project_id"])
-        # Fallback to Local JSON
+        # Fallback to Local JSON (Your Laptop)
         else:
             st.session_state.db = firestore.Client.from_service_account_json("the-minimalist-cfcaf-firebase-adminsdk-fbsvc-ba5ae5bc99.json")
     except Exception as e:
@@ -45,7 +45,7 @@ def save_log_with_check(name, score, s, w, e, c, sc):
     except Exception as err:
         st.error(f"Cloud Error: {err}")
 
-# --- 3. PAGE CONFIG & STYLING ---
+# --- 3. UI CONFIGURATION & CSS ---
 st.set_page_config(page_title="The Minimalist", page_icon="🧘", layout="wide")
 
 if 'page' not in st.session_state:
@@ -65,13 +65,13 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# --- 4. LOAD MODEL ---
+# Load ML Model
 try:
     model = joblib.load('minimalist_model.pkl')
 except:
     st.error("Model file missing.")
 
-# --- 5. PAGE NAVIGATION: HOME ---
+# --- 4. PAGE: HOME ---
 if st.session_state.page == 'Home':
     st.markdown("""
         <style>
@@ -90,7 +90,7 @@ if st.session_state.page == 'Home':
     with col_btn:
         st.button("GET STARTED →", use_container_width=True, on_click=start_app)
 
-# --- 6. PAGE NAVIGATION: DASHBOARD ---
+# --- 5. PAGE: DASHBOARD ---
 elif st.session_state.page == 'Dashboard':
     with st.sidebar:
         st.markdown("### 👤 IDENTITY")
@@ -127,8 +127,27 @@ elif st.session_state.page == 'Dashboard':
                 save_log_with_check(user_name, prediction, sleep, work, exercise, caffeine, screen)
 
     st.divider()
+   
+    # --- WELLNESS FEEDBACK LOGIC ---
+    if prediction > 85:
+        st.success("✨ **OPTIMAL FLOW:** Your habits are perfectly aligned. You are in a high-performance zone.")
+    elif prediction > 70:
+        st.info("⚖️ **BALANCED:** You are doing well, but keep an eye on your recovery metrics.")
+    elif prediction > 50:
+        st.warning("⚠️ **FRICTION DETECTED:** You are approaching a burnout phase. Consider reducing work hours.")
+    else:
+        st.error("🚨 **BURNOUT ALERT:** Your alignment is critically low. Immediate rest is recommended.")
 
-    # --- THE ONE AND ONLY TABS SECTION ---
+    # --- DYNAMIC TIPS ---
+    col_tip1, col_tip2 = st.columns(2)
+    with col_tip1:
+        if screen > 6:
+            st.caption("💡 *Tip: Your screen time is high. A 20-minute digital fast would improve your score.*")
+    with col_tip2:
+        if sleep < 6:
+            st.caption("💡 *Tip: Sleep is your primary fuel. Your score won't improve without better recovery.*")
+
+    # --- TABS SECTION ---
     tab1, tab2, tab3, tab4 = st.tabs(["🖼️ VISUAL SNAPSHOT", "📊 METRIC CHART", "☁️ CLOUD HISTORY", "👨‍💻 THE ARCHITECT"])
     
     with tab1:
@@ -148,9 +167,12 @@ elif st.session_state.page == 'Dashboard':
         try:
             if st.session_state.db:
                 logs = st.session_state.db.collection("user_logs").order_by("timestamp", direction=firestore.Query.DESCENDING).limit(5).get()
-                for doc in logs:
-                    d = doc.to_dict()
-                    st.text(f"☁️ {d.get('name', 'User')} | Alignment: {round(d.get('efficiency_score', 0), 1)}%")
+                if logs:
+                    for doc in logs:
+                        d = doc.to_dict()
+                        st.text(f"☁️ {d.get('name', 'User')} | Alignment: {round(d.get('efficiency_score', 0), 1)}%")
+                else:
+                    st.info("No cloud data found yet.")
             else:
                 st.info("Database not connected.")
         except:
