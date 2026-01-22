@@ -1,8 +1,91 @@
-# ... (Keep everything from Part 1 to Part 5 the same) ...
+import streamlit as st
+import joblib
+import numpy as np
+import pandas as pd
+import plotly.express as px
+import plotly.graph_objects as go
+from google.cloud import firestore
+
+# --- 1. FIREBASE INITIALIZATION ---
+if 'db' not in st.session_state:
+    try:
+        # Ensure this JSON file is in your GitHub repository
+        st.session_state.db = firestore.Client.from_service_account_json("the-minimalist-cfcaf-firebase-adminsdk-fbsvc-ba5ae5bc99.json")
+    except Exception as e:
+        st.session_state.db = None
+        st.sidebar.warning("Offline Mode: Cloud Sync Disabled.")
+
+# --- 2. CLOUD SYNC FUNCTION ---
+def save_log_with_check(name, score, s, w, e, c, sc):
+    try:
+        if st.session_state.db is None:
+            st.error("Database not connected.")
+            return
+
+        query = st.session_state.db.collection("user_logs").where("name", "==", name).limit(1).get()
+        
+        if len(query) > 0:
+            st.error(f"The name '{name}' is already taken. Try a unique identifier.")
+        else:
+            doc_ref = st.session_state.db.collection("user_logs").document()
+            doc_ref.set({
+                "name": name,
+                "efficiency_score": float(score),
+                "sleep": s, "work": w, "exercise": e, "caffeine": c, "screen": sc,
+                "timestamp": firestore.SERVER_TIMESTAMP
+            })
+            st.toast(f"Success! {name}'s data secured in Cloud.", icon="☁️")
+    except Exception as err:
+        st.error(f"Cloud Error: {err}")
+
+# --- 3. PAGE CONFIG & STYLING ---
+st.set_page_config(page_title="The Minimalist", page_icon="🧘", layout="wide")
+
+if 'page' not in st.session_state:
+    st.session_state.page = 'Home'
+
+def start_app():
+    st.session_state.page = 'Dashboard'
+
+st.markdown("""
+    <style>
+    .stApp { background-color: #0E1117; color: #FFFFFF; }
+    div.stButton > button { transition: all 0.3s ease-in-out; border-radius: 12px !important; }
+    div.stButton > button:hover { transform: translateY(-3px); box-shadow: 0px 8px 15px rgba(114, 44, 227, 0.4) !important; }
+    div[data-baseweb="slider"] [role="slider"] { border: 2px solid #722ce3 !important; box-shadow: 0px 0px 12px rgba(114, 44, 227, 0.6) !important; }
+    .hero-container { text-align: center; padding-top: 15vh; color: white; }
+    .hero-title { font-size: 5rem !important; font-weight: 800; letter-spacing: -2px; }
+    </style>
+    """, unsafe_allow_html=True)
+
+# --- 4. LOAD MACHINE LEARNING MODEL ---
+try:
+    model = joblib.load('minimalist_model.pkl')
+except:
+    st.error("ML Model file not found.")
+
+# --- 5. PAGE NAVIGATION: HOME ---
+if st.session_state.page == 'Home':
+    st.markdown("""
+        <style>
+        .stApp {
+            background: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), 
+                        url("https://images.unsplash.com/photo-1506126613408-eca07ce68773?auto=format&fit=crop&w=1920&q=80");
+            background-size: cover; background-position: center;
+        }
+        </style>
+        <div class="hero-container">
+            <h1 class="hero-title">THE MINIMALIST.</h1>
+            <p style="font-size: 1.5rem; opacity: 0.8; letter-spacing: 2px;">FIND YOUR CENTER. OPTIMIZE YOUR LIFE.</p>
+        </div>
+    """, unsafe_allow_html=True)
+
+    _, col_btn, _ = st.columns([1, 1, 1])
+    with col_btn:
+        st.button("GET STARTED →", use_container_width=True, on_click=start_app)
 
 # --- 6. PAGE NAVIGATION: DASHBOARD ---
 elif st.session_state.page == 'Dashboard':
-    
     with st.sidebar:
         st.markdown("### 👤 IDENTITY")
         user_name = st.text_input("Enter Name", placeholder="Your Name...")
@@ -14,15 +97,13 @@ elif st.session_state.page == 'Dashboard':
         caffeine = st.slider("Caffeine (Cups)", 0, 6, 2)
         screen = st.slider("Screen (Hours)", 1.0, 8.0, 3.0)
         st.divider()
-        if st.button("← Back to Meditation"):
+        if st.button("← Back to Home"):
             st.session_state.page = 'Home'
             st.rerun()
 
-    # Model Inference
     input_data = np.array([[sleep, work, exercise, caffeine, screen]])
     prediction = model.predict(input_data)[0]
 
-    # Header Display
     st.markdown(f'<h1 style="text-align: center;">THE MINIMALIST x {user_name.upper() if user_name else "YOU"}</h1>', unsafe_allow_html=True)
     
     _, col_mid, _ = st.columns([1, 2, 1])
@@ -34,25 +115,23 @@ elif st.session_state.page == 'Dashboard':
             </div>
         """, unsafe_allow_html=True)
         
-        st.write("")
         if not user_name.strip():
-            st.warning("⚠️ Enter a name in the sidebar to enable Cloud Sync.")
-            st.button("🚀 SYNC TO GOOGLE FIREBASE", disabled=True, use_container_width=True)
+            st.warning("⚠️ Enter a name to enable Cloud Sync.")
         else:
             if st.button("🚀 SYNC TO GOOGLE FIREBASE", use_container_width=True):
                 save_log_with_check(user_name, prediction, sleep, work, exercise, caffeine, screen)
 
     st.divider()
 
-    # --- UPDATED TABS SECTION ---
-    tab1, tab2, tab3, tab4 = st.tabs(["🖼️ VISUAL SNAPSHOT", "📊 METRIC CHART", "☁️ CLOUD HISTORY", "👨‍💻 THE DEVELOPER"])
+    # --- TABS SECTION ---
+    tab1, tab2, tab3, tab4 = st.tabs(["🖼️ VISUAL SNAPSHOT", "📊 METRICS", "☁️ CLOUD HISTORY", "👨‍💻 THE ARCHITECT"])
     
     with tab1:
         df_radar = pd.DataFrame(dict(
             r=[sleep, work/1.5, exercise/15, caffeine, screen],
             theta=['Sleep','Work','Exercise','Caffeine','Screen']))
         fig = px.line_polar(df_radar, r='r', theta='theta', line_close=True)
-        fig.update_traces(fill='toself', fillcolor='rgba(114, 44, 227, 0.3)', line_color="#722ce3", line_width=4)
+        fig.update_traces(fill='toself', fillcolor='rgba(114, 44, 227, 0.3)', line_color="#722ce3")
         fig.update_layout(polar=dict(bgcolor="rgba(0,0,0,0)", radialaxis=dict(visible=False), angularaxis=dict(color="white")),
                           paper_bgcolor="rgba(0,0,0,0)", showlegend=False)
         st.plotly_chart(fig, use_container_width=True)
@@ -65,44 +144,28 @@ elif st.session_state.page == 'Dashboard':
         try:
             logs = st.session_state.db.collection("user_logs").order_by("timestamp", direction=firestore.Query.DESCENDING).limit(5).get()
             if logs:
-                st.write("### Recent Syncs from Google Cloud")
                 for doc in logs:
                     d = doc.to_dict()
-                    st.text(f"☁️ {d.get('name', 'User')} | Score: {round(d.get('efficiency_score', 0), 1)}%")
+                    st.text(f"☁️ {d.get('name', 'User')} | Alignment: {round(d.get('efficiency_score', 0), 1)}%")
             else:
-                st.info("No cloud data found yet.")
+                st.info("No cloud data found.")
         except:
-            st.info("Sync your data to view global history.")
+            st.info("Sync active session to view global history.")
 
     with tab4:
         st.markdown("### **Project Vision & Technical Stack**")
-        st.write("""
-            **The Minimalist** was developed to bridge the gap between high-performance habit tracking and mental clarity. 
-            By leveraging data science, we can visualize how our biological choices impact our daily output.
-        """)
+        st.write("The Minimalist bridges data science and personal wellbeing.")
         st.info("""
-            **Core Skills Demonstrated:**
-            - **Machine Learning:** Random Forest Regression for predictive alignment.
-            - **Cloud Architecture:** Secure NoSQL integration via Google Firebase.
-            - **UI/UX Design:** Custom CSS injection and responsive Plotly visualizations.
+            **Technical Expertise:**
+            - **Intelligence:** Scikit-Learn (Random Forest)
+            - **Database:** Google Cloud Firestore (NoSQL)
+            - **Interface:** Streamlit & Custom CSS Injection
         """)
-
-    # --- ENHANCED ARCHITECT FOOTER ---
-    st.divider()
-    st.markdown("<h2 style='text-align: center; letter-spacing: 3px;'>THE ARCHITECT</h2>", unsafe_allow_html=True)
-    
-    col_img, col_info = st.columns([1, 2])
-    with col_img:
-        st.image("https://scontent.fccu5-1.fna.fbcdn.net/v/t39.30808-6/550939647_122094055065044657_3789721203803613706_n.jpg?_nc_cat=102&ccb=1-7&_nc_sid=a5f93a&_nc_ohc=o9azU6rrPysQ7kNvwEvpwno&_nc_oc=Adk1JvWm7p6VRUicvywIHtsLsCls1VQaG5zHs6r9R7ZsPRv-AxadK3QttrbpPezpd5M&_nc_zt=23&_nc_ht=scontent.fccu5-1.fna&_nc_gid=5lvWZWHvIQSHJy2ezsbrig&oh=00_AfobYDvrcZENkLbtYMzrB6xLv08pCi2lrBroHKlDkCWfhw&oe=69771FF9", use_container_width=True)
-
-    with col_info:
-        st.markdown("### **Aikantic Maitra**")
-        st.markdown("#### *Full Stack Data Engineering*")
-        st.write("""
-            Passionate about building minimalist, data-driven applications that prioritize user mental wellbeing. 
-            Focused on scalable cloud infrastructure and interpretable AI.
-        """)
-        st.markdown(f"""
-            <a href="https://github.com/Aikanticmaitra2980" target="_blank"><button style="border:1px solid #722ce3; border-radius:5px; background:transparent; color:white; padding:5px 15px; cursor:pointer;">GitHub</button></a>
-            <a href="https://www.linkedin.com/in/aikantic-maitra-118b48362/" target="_blank"><button style="border:1px solid #722ce3; border-radius:5px; background:transparent; color:white; padding:5px 15px; cursor:pointer;">LinkedIn</button></a>
-        """, unsafe_allow_html=True)
+        st.divider()
+        c1, c2 = st.columns([1, 2])
+        with c1:
+            st.image("https://scontent.fccu5-1.fna.fbcdn.net/v/t39.30808-6/550939647_122094055065044657_3789721203803613706_n.jpg?_nc_cat=102&ccb=1-7&_nc_sid=a5f93a&_nc_ohc=o9azU6rrPysQ7kNvwEvpwno&_nc_oc=Adk1JvWm7p6VRUicvywIHtsLsCls1VQaG5zHs6r9R7ZsPRv-AxadK3QttrbpPezpd5M&_nc_zt=23&_nc_ht=scontent.fccu5-1.fna&_nc_gid=5lvWZWHvIQSHJy2ezsbrig&oh=00_AfobYDvrcZENkLbtYMzrB6xLv08pCi2lrBroHKlDkCWfhw&oe=69771FF9", width=200)
+        with c2:
+            st.markdown("### **Aikantic Maitra**")
+            st.write("Full Stack Data Engineering")
+            st.markdown("[GitHub](https://github.com/Aikanticmaitra2980) | [LinkedIn](https://www.linkedin.com/in/aikantic-maitra-118b48362/)")
