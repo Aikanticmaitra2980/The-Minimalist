@@ -8,29 +8,25 @@ from google.cloud import firestore
 from google.oauth2 import service_account
 
 
+
 if 'db' not in st.session_state:
-    try:
-        
-        if st.config.get_option("server.address") is None or "streamlit.app" in st.config.get_option("server.address"):
-            if "firebase_secrets" in st.secrets:
-                creds_dict = dict(st.secrets["firebase_secrets"])
-                creds = service_account.Credentials.from_service_account_info(creds_dict)
-                st.session_state.db = firestore.Client(credentials=creds, project=creds_dict["project_id"])
-            else:
-                
-                st.session_state.db = firestore.Client.from_service_account_json("the-minimalist-cfcaf-firebase-adminsdk-fbsvc-ba5ae5bc99.json")
-        else:
-            
-            st.session_state.db = firestore.Client.from_service_account_json("the-minimalist-cfcaf-firebase-adminsdk-fbsvc-ba5ae5bc99.json")
-            
-    except Exception:
-        
+    
+    if "firebase_secrets" in st.secrets:
+        try:
+            creds_dict = dict(st.secrets["firebase_secrets"])
+            creds = service_account.Credentials.from_service_account_info(creds_dict)
+            st.session_state.db = firestore.Client(credentials=creds, project=creds_dict["project_id"])
+        except Exception as e:
+            st.error(f"Secret Parsing Error: {e}")
+            st.session_state.db = None
+    
+   
+    else:
         try:
             st.session_state.db = firestore.Client.from_service_account_json("the-minimalist-cfcaf-firebase-adminsdk-fbsvc-ba5ae5bc99.json")
-        except:
+        except Exception:
             st.session_state.db = None
             st.sidebar.warning("Offline Mode: Cloud Sync Disabled.")
-
 
 def save_log_with_check(name, score, s, w, e, c, sc):
     try:
