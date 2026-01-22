@@ -5,3 +5,4 @@ scikit-learn
 joblib
 plotly
 google-cloud-firestore
+google-auth
