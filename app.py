@@ -7,36 +7,39 @@ import plotly.graph_objects as go
 from google.cloud import firestore
 from google.oauth2 import service_account
 
-# --- 1. ROBUST FIREBASE INITIALIZATION ---
+
 if 'db' not in st.session_state:
-    # A. Check for Global Secrets first (Streamlit Cloud)
+    
     if "firebase_secrets" in st.secrets:
         try:
             creds_dict = dict(st.secrets["firebase_secrets"])
             creds = service_account.Credentials.from_service_account_info(creds_dict)
             st.session_state.db = firestore.Client(credentials=creds, project=creds_dict["project_id"])
+            st.sidebar.success("✅ Cloud Sync Active")
         except Exception as e:
-            st.error(f"Cloud Connection Error: {e}")
             st.session_state.db = None
+
     
-    # B. If no secrets (Localhost), check for the JSON file
-    else:
+    if 'db' not in st.session_state or st.session_state.db is None:
         try:
-            # Replace with your actual filename if it differs
+            
             local_json = "the-minimalist-cfcaf-firebase-adminsdk-fbsvc-ba5ae5bc99.json"
             st.session_state.db = firestore.Client.from_service_account_json(local_json)
-        except Exception:
+            st.sidebar.info("🏠 Local Database Active")
+        except Exception as e:
             st.session_state.db = None
-            st.sidebar.warning("Offline Mode: Cloud Sync Disabled.")
+            st.sidebar.warning("⚠️ Database Not Connected")
+           
+            print(f"DEBUG: Firebase Local Error -> {e}")
 
-# --- 2. DATA SYNC FUNCTION ---
+
 def save_log_with_check(name, score, s, w, e, c, sc):
     try:
         if st.session_state.db is None:
             st.error("Database not connected.")
             return
 
-        # Check for unique name
+       
         query = st.session_state.db.collection("user_logs").where("name", "==", name).limit(1).get()
         if len(query) > 0:
             st.error(f"The name '{name}' is already taken. Try a unique identifier.")
@@ -186,3 +189,4 @@ elif st.session_state.page == 'Dashboard':
     with c2:
         st.markdown("### **Aikantic Maitra**")
         st.markdown("[GitHub Repository](https://github.com/Aikanticmaitra2980) | [LinkedIn Profile](https://www.linkedin.com/in/aikantic-maitra-118b48362/)")
+
