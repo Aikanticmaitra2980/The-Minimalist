@@ -166,24 +166,30 @@ elif st.session_state.page == 'Dashboard':
             st.info("Sync your data to view global history.")
 
     with tab4:
+        # If this is blank, check that there are no 'st.empty()' calls above it
         st.markdown("### Meet the Developer")
-        col_dev_img, col_dev_text = st.columns([1, 2])
-        with col_dev_img:
-            st.image("https://media.licdn.com/dms/image/v2/D5603AQF1Fvggzuh1zA/profile-displayphoto-crop_800_800/B56ZlZLFqeI8AI-/0/1758137706303?e=1770854400&v=beta&t=Zj0F13CZsoDP6dXfoItPPeyGmQFkI2zdZCzKmdCf7Bw", 
-                     use_container_width=True)
-        with col_dev_text:
-            st.markdown("### **Aikantic Maitra**")
-            st.info("**Full Stack Data Engineer**")
-            st.write("""
-                I specialize in building minimalist, data-driven applications that prioritize user mental wellbeing. 
-                My expertise lies in bridging the gap between Machine Learning models and scalable Cloud Infrastructure.
-            """)
-            st.markdown("#### 🚀 Project Tech Stack")
-            st.markdown("- **AI:** Scikit-Learn Random Forest")
-            st.markdown("- **Database:** Google Firebase Firestore")
-            st.markdown("- **UI:** Streamlit & Plotly")
-            st.divider()
-            st.markdown("[GitHub](https://github.com/Aikanticmaitra2980) | [LinkedIn](https://www.linkedin.com/in/aikantic-maitra-118b48362/)")
+        
+        # We use a container to force the layout to render
+        with st.container():
+            col_dev_img, col_dev_text = st.columns([1, 2])
+            
+            with col_dev_img:
+                st.image("https://media.licdn.com/dms/image/v2/D5603AQF1Fvggzuh1zA/profile-displayphoto-crop_800_800/B56ZlZLFqeI8AI-/0/1758137706303?e=1770854400&v=beta&t=Zj0F13CZsoDP6dXfoItPPeyGmQFkI2zdZCzKmdCf7Bw", 
+                         caption="Aikantic Maitra",
+                         use_container_width=True)
+            
+            with col_dev_text:
+                st.markdown("### **Aikantic Maitra**")
+                st.info("**Full Stack Data Engineer**")
+                st.write("""
+                    I specialize in building minimalist, data-driven applications that prioritize user mental wellbeing. 
+                    My expertise lies in bridging the gap between Machine Learning models and scalable Cloud Infrastructure.
+                """)
+                st.markdown("#### 🚀 Project Tech Stack")
+                st.markdown("- **AI:** Scikit-Learn Random Forest")
+                st.markdown("- **Database:** Google Firebase Firestore")
+                st.markdown("- **UI:** Streamlit & Plotly")
+                
+                st.divider()
+                st.markdown(f"**[GitHub](https://github.com/Aikanticmaitra2980)** | **[LinkedIn](https://www.linkedin.com/in/aikantic-maitra-118b48362/)**")
 
-    st.divider()
-    st.markdown("<p style='text-align: center; opacity: 0.5;'>The Minimalist © 2024 | Built for Peak Performance</p>", unsafe_allow_html=True)
