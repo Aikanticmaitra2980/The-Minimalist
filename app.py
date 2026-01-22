@@ -10,12 +10,10 @@ from google.oauth2 import service_account
 # --- 1. SMART FIREBASE INITIALIZATION ---
 if 'db' not in st.session_state:
     try:
-        # Try Global Secrets first (Streamlit Cloud)
         if "firebase_secrets" in st.secrets:
             creds_dict = dict(st.secrets["firebase_secrets"])
             creds = service_account.Credentials.from_service_account_info(creds_dict)
             st.session_state.db = firestore.Client(credentials=creds, project=creds_dict["project_id"])
-        # Fallback to Local JSON (Your Laptop)
         else:
             st.session_state.db = firestore.Client.from_service_account_json("the-minimalist-cfcaf-firebase-adminsdk-fbsvc-ba5ae5bc99.json")
     except Exception as e:
@@ -56,22 +54,14 @@ def start_app():
 st.markdown("""
     <style>
     .stApp { background-color: #0E1117; color: #FFFFFF; }
-    
-    /* Button Hover & Growth Effects */
     div.stButton > button { transition: all 0.3s ease-in-out; border-radius: 12px !important; }
     div.stButton > button:hover { transform: translateY(-3px); box-shadow: 0px 8px 15px rgba(114, 44, 227, 0.4) !important; }
     div.stButton > button:active { transform: scale(1.1); }
-
-    /* Slider UI Customization */
-    div[data-baseweb="slider"] > div:first-child { background: rgba(255, 255, 255, 0.1) !important; height: 4px !important; }
     div[data-baseweb="slider"] [role="slider"] {
         background-color: rgba(0, 0, 0, 0) !important;
         border: 2px solid #722ce3 !important;
-        height: 22px !important; width: 22px !important;
         box-shadow: 0px 0px 12px rgba(114, 44, 227, 0.6) !important;
     }
-    div[data-testid="stThumbValue"] { color: #722ce3 !important; font-weight: 700; }
-
     .hero-container { text-align: center; padding-top: 15vh; color: white; }
     .hero-title { font-size: 5rem !important; font-weight: 800; letter-spacing: -2px; }
     </style>
@@ -134,28 +124,16 @@ elif st.session_state.page == 'Dashboard':
             </div>
         """, unsafe_allow_html=True)
         
-        st.write("")
         if not user_name.strip():
             st.warning("⚠️ Enter a name in the sidebar to enable Cloud Sync.")
-            st.button("🚀 SYNC TO GOOGLE FIREBASE", disabled=True, use_container_width=True)
         else:
             if st.button("🚀 SYNC TO GOOGLE FIREBASE", use_container_width=True):
                 save_log_with_check(user_name, prediction, sleep, work, exercise, caffeine, screen)
 
     st.divider()
 
-    # Feedback Logic
-    if prediction > 85:
-        st.success("✨ **Optimal Status:** You are currently in a high-performance flow state.")
-    elif prediction > 65:
-        st.info("⚖️ **Balanced:** Respectable output, but minor frictions detected.")
-    else:
-        st.error("🚨 **Critical Alert:** Alignment is low.")
-        if screen > 5:
-            st.warning("💡 **Minimalist Tip:** High screen time detected. Put your phone in another room for 20 minutes.")
-
-    # Visual Snapshot Tabs
-    tab1, tab2, tab3 = st.tabs(["🖼️ VISUAL SNAPSHOT", "📊 METRICS", "☁️ CLOUD HISTORY"])
+    # --- SINGLE TAB DEFINITION ---
+    tab1, tab2, tab3, tab4 = st.tabs(["🖼️ VISUAL SNAPSHOT", "📊 METRICS", "☁️ CLOUD HISTORY", "👨‍💻 THE ARCHITECT"])
     
     with tab1:
         df_radar = pd.DataFrame(dict(
@@ -174,22 +152,38 @@ elif st.session_state.page == 'Dashboard':
 
     with tab3:
         try:
-            logs = st.session_state.db.collection("user_logs").order_by("timestamp", direction=firestore.Query.DESCENDING).limit(5).get()
-            if logs:
-                for doc in logs:
-                    d = doc.to_dict()
-                    st.text(f"☁️ {d.get('name', 'User')} | Alignment: {round(d.get('efficiency_score', 0), 1)}%")
+            if st.session_state.db:
+                logs = st.session_state.db.collection("user_logs").order_by("timestamp", direction=firestore.Query.DESCENDING).limit(5).get()
+                if logs:
+                    for doc in logs:
+                        d = doc.to_dict()
+                        st.text(f"☁️ {d.get('name', 'User')} | Alignment: {round(d.get('efficiency_score', 0), 1)}%")
+                else:
+                    st.info("No cloud data found yet.")
             else:
-                st.info("No cloud data found yet.")
-        except:
+                st.warning("Database not connected.")
+        except Exception:
             st.info("Sync your data to view global history.")
 
-    # Footer
+    with tab4:
+        st.markdown("### Meet the Developer")
+        col_dev_img, col_dev_text = st.columns([1, 2])
+        with col_dev_img:
+            st.image("https://media.licdn.com/dms/image/v2/D5603AQF1Fvggzuh1zA/profile-displayphoto-crop_800_800/B56ZlZLFqeI8AI-/0/1758137706303?e=1770854400&v=beta&t=Zj0F13CZsoDP6dXfoItPPeyGmQFkI2zdZCzKmdCf7Bw", 
+                     use_container_width=True)
+        with col_dev_text:
+            st.markdown("### **Aikantic Maitra**")
+            st.info("**Full Stack Data Engineer**")
+            st.write("""
+                I specialize in building minimalist, data-driven applications that prioritize user mental wellbeing. 
+                My expertise lies in bridging the gap between Machine Learning models and scalable Cloud Infrastructure.
+            """)
+            st.markdown("#### 🚀 Project Tech Stack")
+            st.markdown("- **AI:** Scikit-Learn Random Forest")
+            st.markdown("- **Database:** Google Firebase Firestore")
+            st.markdown("- **UI:** Streamlit & Plotly")
+            st.divider()
+            st.markdown("[GitHub](https://github.com/Aikanticmaitra2980) | [LinkedIn](https://www.linkedin.com/in/aikantic-maitra-118b48362/)")
+
     st.divider()
-    st.markdown("<h2 style='text-align: center; letter-spacing: 3px;'>THE ARCHITECT</h2>", unsafe_allow_html=True)
-    col_img, col_info = st.columns([1, 2])
-    with col_img:
-        st.image("https://scontent.fccu5-1.fna.fbcdn.net/v/t39.30808-6/550939647_122094055065044657_3789721203803613706_n.jpg?_nc_cat=102&ccb=1-7&_nc_sid=a5f93a&_nc_ohc=o9azU6rrPysQ7kNvwEvpwno&_nc_oc=Adk1JvWm7p6VRUicvywIHtsLsCls1VQaG5zHs6r9R7ZsPRv-AxadK3QttrbpPezpd5M&_nc_zt=23&_nc_ht=scontent.fccu5-1.fna&_nc_gid=5lvWZWHvIQSHJy2ezsbrig&oh=00_AfobYDvrcZENkLbtYMzrB6xLv08pCi2lrBroHKlDkCWfhw&oe=69771FF9", use_container_width=True)
-    with col_info:
-        st.markdown("### **Aikantic Maitra**")
-        st.markdown("[GitHub](https://github.com/Aikanticmaitra2980) | [LinkedIn](https://www.linkedin.com/in/aikantic-maitra-118b48362/)")
+    st.markdown("<p style='text-align: center; opacity: 0.5;'>The Minimalist © 2024 | Built for Peak Performance</p>", unsafe_allow_html=True)
