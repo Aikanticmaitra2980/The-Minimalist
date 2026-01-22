@@ -135,7 +135,14 @@ elif st.session_state.page == 'Dashboard':
     # --- SINGLE TAB DEFINITION ---
     tab1, tab2, tab3, tab4 = st.tabs(["🖼️ VISUAL SNAPSHOT", "📊 METRICS", "☁️ CLOUD HISTORY", "👨‍💻 THE ARCHITECT"])
     
+    # --- UNIFIED TAB DEFINITION (DO THIS ONLY ONCE) ---
+    tab1, tab2, tab3, tab4 = st.tabs(["🖼️ VISUAL SNAPSHOT", "📊 METRICS", "☁️ CLOUD HISTORY", "👨‍💻 THE ARCHITECT"])
+    
+   # --- UNIFIED TAB DEFINITION (DO THIS ONLY ONCE) ---
+    tab1, tab2, tab3, tab4 = st.tabs(["🖼️ VISUAL SNAPSHOT", "📊 METRICS", "☁️ CLOUD HISTORY", "👨‍💻 THE ARCHITECT"])
+    
     with tab1:
+        # Radar Chart Logic
         df_radar = pd.DataFrame(dict(
             r=[sleep, work/1.5, exercise/15, caffeine, screen],
             theta=['Sleep','Work','Exercise','Caffeine','Screen']))
@@ -147,10 +154,12 @@ elif st.session_state.page == 'Dashboard':
         st.caption("Right-click image and 'Save As' to keep your visual alignment card.")
 
     with tab2:
+        # Metrics Chart
         chart_data = pd.DataFrame({'Metric': ['Sleep', 'Work', 'Screen'], 'Hours': [sleep, work, screen]})
         st.bar_chart(chart_data, x='Metric', y='Hours', color="#722ce3")
 
     with tab3:
+        # Cloud History
         try:
             if st.session_state.db:
                 logs = st.session_state.db.collection("user_logs").order_by("timestamp", direction=firestore.Query.DESCENDING).limit(5).get()
@@ -166,30 +175,25 @@ elif st.session_state.page == 'Dashboard':
             st.info("Sync your data to view global history.")
 
     with tab4:
-        # If this is blank, check that there are no 'st.empty()' calls above it
-        st.markdown("### Meet the Developer")
-        
-        # We use a container to force the layout to render
-        with st.container():
-            col_dev_img, col_dev_text = st.columns([1, 2])
-            
-            with col_dev_img:
-                st.image("https://media.licdn.com/dms/image/v2/D5603AQF1Fvggzuh1zA/profile-displayphoto-crop_800_800/B56ZlZLFqeI8AI-/0/1758137706303?e=1770854400&v=beta&t=Zj0F13CZsoDP6dXfoItPPeyGmQFkI2zdZCzKmdCf7Bw", 
-                         caption="Aikantic Maitra",
-                         use_container_width=True)
-            
-            with col_dev_text:
-                st.markdown("### **Aikantic Maitra**")
-                st.info("**Full Stack Data Engineer**")
-                st.write("""
-                    I specialize in building minimalist, data-driven applications that prioritize user mental wellbeing. 
-                    My expertise lies in bridging the gap between Machine Learning models and scalable Cloud Infrastructure.
-                """)
-                st.markdown("#### 🚀 Project Tech Stack")
-                st.markdown("- **AI:** Scikit-Learn Random Forest")
-                st.markdown("- **Database:** Google Firebase Firestore")
-                st.markdown("- **UI:** Streamlit & Plotly")
-                
-                st.divider()
-                st.markdown(f"**[GitHub](https://github.com/Aikanticmaitra2980)** | **[LinkedIn](https://www.linkedin.com/in/aikantic-maitra-118b48362/)**")
-
+        # The Architect Section
+        with st.spinner("Loading Architect Profile..."):
+            st.markdown("### Meet the Developer")
+            with st.container():
+                col_dev_img, col_dev_text = st.columns([1, 2])
+                with col_dev_img:
+                    st.image("https://media.licdn.com/dms/image/v2/D5603AQF1Fvggzuh1zA/profile-displayphoto-crop_800_800/B56ZlZLFqeI8AI-/0/1758137706303?e=1770854400&v=beta&t=Zj0F13CZsoDP6dXfoItPPeyGmQFkI2zdZCzKmdCf7Bw", 
+                             caption="Aikantic Maitra",
+                             use_container_width=True)
+                with col_dev_text:
+                    st.markdown("### **Aikantic Maitra**")
+                    st.info("**Full Stack Data Engineer**")
+                    st.write("""
+                        I specialize in building minimalist, data-driven applications that prioritize user mental wellbeing. 
+                        My expertise lies in bridging the gap between Machine Learning models and scalable Cloud Infrastructure.
+                    """)
+                    st.markdown("#### 🚀 Project Tech Stack")
+                    st.markdown("- **AI:** Scikit-Learn Random Forest")
+                    st.markdown("- **Database:** Google Firebase Firestore")
+                    st.markdown("- **UI:** Streamlit & Plotly")
+                    st.divider()
+                    st.markdown(f"**[GitHub](https://github.com/Aikanticmaitra2980)** | **[LinkedIn](https://www.linkedin.com/in/aikantic-maitra-118b48362/)**")
