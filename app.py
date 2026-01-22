@@ -133,13 +133,7 @@ elif st.session_state.page == 'Dashboard':
     st.divider()
 
     # --- SINGLE TAB DEFINITION ---
-    tab1, tab2, tab3, tab4 = st.tabs(["🖼️ VISUAL SNAPSHOT", "📊 METRICS", "☁️ CLOUD HISTORY", "👨‍💻 THE ARCHITECT"])
-    
-    # --- UNIFIED TAB DEFINITION (DO THIS ONLY ONCE) ---
-    tab1, tab2, tab3, tab4 = st.tabs(["🖼️ VISUAL SNAPSHOT", "📊 METRICS", "☁️ CLOUD HISTORY", "👨‍💻 THE ARCHITECT"])
-    
-   # --- UNIFIED TAB DEFINITION (DO THIS ONLY ONCE) ---
-    tab1, tab2, tab3, tab4 = st.tabs(["🖼️ VISUAL SNAPSHOT", "📊 METRICS", "☁️ CLOUD HISTORY", "👨‍💻 THE ARCHITECT"])
+    tab1, tab2, tab3, tab4 = st.tabs(["🖼️ VISUAL SNAPSHOT", "📊 METRICS", "☁️ CLOUD HISTORY", "👨‍💻 THE ARCHITECT"]
     
     with tab1:
         # Radar Chart Logic
@@ -197,3 +191,4 @@ elif st.session_state.page == 'Dashboard':
                     st.markdown("- **UI:** Streamlit & Plotly")
                     st.divider()
                     st.markdown(f"**[GitHub](https://github.com/Aikanticmaitra2980)** | **[LinkedIn](https://www.linkedin.com/in/aikantic-maitra-118b48362/)**")
+
